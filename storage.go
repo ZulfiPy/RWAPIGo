@@ -13,12 +13,22 @@ func NewStorage[T any] (fileName string) *Storage[T] {
 	return &Storage[T]{FileName: fileName}
 }
 
-func (s *Storage[T]) Save(data T) error {
+func (storage *Storage[T]) Save(data T) error {
 	fileData, err := json.MarshalIndent(data, "", "    ")
 
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(s.FileName, fileData, 0644)
+	return os.WriteFile(storage.FileName, fileData, 0644)
+} 
+
+func (storage *Storage[T]) Load(data *T) error {
+	fileData, err := os.ReadFile(storage.FileName)
+
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(fileData, data)
 }
