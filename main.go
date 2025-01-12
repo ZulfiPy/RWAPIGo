@@ -5,22 +5,32 @@ import (
 	"os"
 )
 
+func ensureStorageFile[T any](storage *Storage[T], data T) error {
+	dataPath := fmt.Sprintf("./%s", storage.FileName)
+	
+	if _, err := os.Stat(dataPath); err != nil {
+		if os.IsNotExist(err) {
+			fmt.Println("creating file", storage.FileName)
+			storage.Save(data)
+			return nil
+		}
+		fmt.Println("Error accessing file:", err)
+		return err
+	}
+
+	fmt.Printf("file exists %s, no action needed.\n", storage.FileName)
+	return nil
+}
+
+
 func main() {
 	fmt.Println("RWAPIGolang runs...")
 	customers := Customers{}
+	vehicles := Vehicles{}
 
-	customersStorage := NewStorage[Customers]("customers.json")
+	customerStorage := NewStorage[Customers]("customers.json")
+	ensureStorageFile(customerStorage, customers)
 
-	customersPath := fmt.Sprintf("./%s", customersStorage.FileName)
-
-	_, err := os.Stat(customersPath)
-
-	if os.IsNotExist(err) {
-		fmt.Println("creating", customersStorage.FileName)
-		customersStorage.Save(customers)
-	} else if err != nil {
-		fmt.Println("Error accessing file:", err)
-	} else {
-		fmt.Println(customersStorage.FileName, "file exists, no action needed.")
-	}
+	vehicleStorage := NewStorage[Vehicles]("vehicles.json")
+	ensureStorageFile(vehicleStorage, vehicles)
 }
