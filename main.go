@@ -11,9 +11,9 @@ func main() {
 
 	customersStorage := NewStorage[Customers]("customers.json")
 
-	path := "./customers.json"
+	customersPath := fmt.Sprintf("./%s", customersStorage.FileName)
 
-	_, err := os.Stat(path)
+	_, err := os.Stat(customersPath)
 
 	if os.IsNotExist(err) {
 		fmt.Println("creating", customersStorage.FileName)
