@@ -1,5 +1,5 @@
 build:
-	go build -o bin/rwapigolang
+	go build -o bin/rwapigolang ./cmd
 
 run: build
 	./bin/rwapigolang
