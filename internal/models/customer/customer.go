@@ -45,7 +45,7 @@ func (cs *CustomerStorage) GetStorage() *storage.Storage[Customers] {
 	return cs.store
 }
 
-func intLength(number int64) int {
+func IntLength(number int64) int {
 	if number == 0 {
 		return 1
 	}
@@ -58,6 +58,14 @@ func intLength(number int64) int {
 	}
 
 	return length
+}
+
+func validateIndex(idx, customersLength int) error {
+	if idx < 0 || idx >= customersLength {
+		return fmt.Errorf("error:index %d is out of range", idx)
+	}
+
+	return nil
 }
 
 func (cs *CustomerStorage) validateInput(input Customer) error {
@@ -91,7 +99,7 @@ func (cs *CustomerStorage) validateInput(input Customer) error {
 		return fmt.Errorf("invalid %v", err)
 	}
 
-	personalIDLen := intLength(input.PersonalID)
+	personalIDLen := IntLength(input.PersonalID)
 
 	if personalIDLen != 11 {
 		return errors.New("invalid input: personal id of the customer must be exactly 11 digits")
@@ -112,6 +120,20 @@ func (cs *CustomerStorage) findCustomerByPersonalID(personalID int64) error {
 	return nil
 }
 
+func (cs *CustomerStorage) FindCustomerByPersonalID(personalID int64) (*Customer, int) {
+	customers := &Customers{}
+	cs.store.Load(customers)
+	c := *customers
+
+	for idx, customer := range c {
+		if customer.PersonalID == personalID {
+			return &c[idx], idx
+		}
+	}
+
+	return nil, -1
+}
+
 func (cs *CustomerStorage) AddCustomer(input Customer) error {
 	if err := cs.validateInput(input); err != nil {
 		return err
@@ -125,13 +147,13 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 	cs.Load(customers)
 
 	newCustomer := Customer{
-		FirstName:   input.FirstName,
-		LastName:    input.LastName,
-		PersonalID:  input.PersonalID,
-		PhoneNumber: input.PhoneNumber,
-		Email:       input.Email,
+		FirstName:      input.FirstName,
+		LastName:       input.LastName,
+		PersonalID:     input.PersonalID,
+		PhoneNumber:    input.PhoneNumber,
+		Email:          input.Email,
 		RentedVehicles: []string{},
-		CreatedAt:   time.Now(),
+		CreatedAt:      time.Now(),
 	}
 
 	*customers = append(*customers, newCustomer)
@@ -139,6 +161,31 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 	if err := cs.store.Save(*customers); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (cs *CustomerStorage) DeleteCustomer(personalID int64) error {
+	customers := &Customers{}
+	cs.store.Load(customers)
+	c := *customers
+
+	_, idx := cs.FindCustomerByPersonalID(personalID)
+
+	if idx == -1 {
+		return fmt.Errorf("customer with personalID %d not found", personalID)
+	}
+
+	if err := validateIndex(idx, len(*customers)); err != nil {
+		return err
+	}
+
+	*customers = append(c[:idx], c[idx+1:]...)
+
+	if err := cs.store.Save(*customers); err != nil {
+		return err
+	}
+
 
 	return nil
 }
