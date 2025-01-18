@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/ZulfiPy/RWAPIGo/internal/storage"
 	"github.com/ZulfiPy/RWAPIGo/internal/models/customer"
 	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
+	"github.com/ZulfiPy/RWAPIGo/internal/storage"
+	"github.com/gorilla/mux"
 )
 
 type APIServer struct {
@@ -64,18 +64,17 @@ func (s *APIServer) getCustomer(w http.ResponseWriter, _ *http.Request) error {
 	return WriteJSON(w, http.StatusOK, customers)
 }
 
-
 func (s *APIServer) addCustomer(w http.ResponseWriter, r *http.Request) error {
-	var customer customer.Customer
-	if err := json.NewDecoder(r.Body).Decode(&customer); err != nil {
+	var newCustomer customer.Customer
+	if err := json.NewDecoder(r.Body).Decode(&newCustomer); err != nil {
 		return err
 	}
 
-	if err := s.customerStore.ValidateInput(customer); err != nil {
-		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	if err := s.customerStore.AddCustomer(newCustomer); err != nil {
+		return err
 	}
 
-	return WriteJSON(w, http.StatusOK, customer)
+	return WriteJSON(w, http.StatusOK, newCustomer)
 }
 
 func WriteJSON(w http.ResponseWriter, status int, value any) error {
