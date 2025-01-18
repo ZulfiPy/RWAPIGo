@@ -60,7 +60,7 @@ func intLength(number int64) int {
 	return length
 }
 
-func (cs CustomerStorage) ValidateInput(input Customer) error {
+func (cs *CustomerStorage) validateInput(input Customer) error {
 	if input.FirstName == "" || len(input.FirstName) < 3 {
 		return errors.New("invalid input: first name cannot be empty or shorter than 3 characters")
 	}
@@ -95,6 +95,49 @@ func (cs CustomerStorage) ValidateInput(input Customer) error {
 
 	if personalIDLen != 11 {
 		return errors.New("invalid input: personal id of the customer must be exactly 11 digits")
+	}
+
+	return nil
+}
+
+func (cs *CustomerStorage) findCustomerByPersonalID(personalID int64) error {
+	customers := &Customers{}
+	cs.Load(customers)
+
+	for _, customer := range *customers {
+		if customer.PersonalID == personalID {
+			return fmt.Errorf("customer with personalID %d already persists in the storage", personalID)
+		}
+	}
+	return nil
+}
+
+func (cs *CustomerStorage) AddCustomer(input Customer) error {
+	if err := cs.validateInput(input); err != nil {
+		return err
+	}
+
+	if err := cs.findCustomerByPersonalID(input.PersonalID); err != nil {
+		return err
+	}
+
+	customers := &Customers{}
+	cs.Load(customers)
+
+	newCustomer := Customer{
+		FirstName:   input.FirstName,
+		LastName:    input.LastName,
+		PersonalID:  input.PersonalID,
+		PhoneNumber: input.PhoneNumber,
+		Email:       input.Email,
+		RentedVehicles: []string{},
+		CreatedAt:   time.Now(),
+	}
+
+	*customers = append(*customers, newCustomer)
+
+	if err := cs.store.Save(*customers); err != nil {
+		return err
 	}
 
 	return nil
