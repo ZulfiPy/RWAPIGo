@@ -50,6 +50,9 @@ func (s *APIServer) handleCustomer(w http.ResponseWriter, r *http.Request) error
 	if r.Method == "POST" {
 		return s.addCustomer(w, r)
 	}
+	if r.Method == "DELETE" {
+		return s.deleteCustomer(w, r)
+	}
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
@@ -77,6 +80,27 @@ func (s *APIServer) addCustomer(w http.ResponseWriter, r *http.Request) error {
 	return WriteJSON(w, http.StatusOK, newCustomer)
 }
 
+func (s *APIServer) deleteCustomer(w http.ResponseWriter, r *http.Request) error {
+	var personalID struct {
+		PersonalID int64 `json:"PersonalID"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&personalID); err != nil {
+		return err
+	}
+
+	personalIDLength := customer.IntLength(personalID.PersonalID)
+
+	if personalIDLength != 11 {
+		return WriteJSON(w, http.StatusBadRequest, ApiError{Error: "personalID must be exactly 11 digits"})
+	}
+
+	if err := s.customerStore.DeleteCustomer(personalID.PersonalID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func WriteJSON(w http.ResponseWriter, status int, value any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -86,14 +110,14 @@ func WriteJSON(w http.ResponseWriter, status int, value any) error {
 
 type apiFunc func(w http.ResponseWriter, r *http.Request) error
 
-type apiError struct {
+type ApiError struct {
 	Error string `json:"error"`
 }
 
 func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := f(w, r); err != nil {
-			WriteJSON(w, http.StatusBadRequest, apiError{Error: err.Error()})
+			WriteJSON(w, http.StatusBadRequest, ApiError{Error: err.Error()})
 		}
 	}
 }
