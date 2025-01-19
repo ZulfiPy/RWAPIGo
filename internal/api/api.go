@@ -80,6 +80,10 @@ func (s *APIServer) addCustomer(w http.ResponseWriter, r *http.Request) error {
 	return WriteJSON(w, http.StatusOK, newCustomer)
 }
 
+type CustomResponse struct {
+	Response string `json:"response"`
+}
+
 func (s *APIServer) deleteCustomer(w http.ResponseWriter, r *http.Request) error {
 	var personalID struct {
 		PersonalID int64 `json:"PersonalID"`
@@ -98,7 +102,7 @@ func (s *APIServer) deleteCustomer(w http.ResponseWriter, r *http.Request) error
 		return err
 	}
 
-	return nil
+	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "customer deleted"})
 }
 
 func WriteJSON(w http.ResponseWriter, status int, value any) error {
@@ -108,13 +112,13 @@ func WriteJSON(w http.ResponseWriter, status int, value any) error {
 	return json.NewEncoder(w).Encode(value)
 }
 
-type apiFunc func(w http.ResponseWriter, r *http.Request) error
+type ApiFunc func(w http.ResponseWriter, r *http.Request) error
 
 type ApiError struct {
 	Error string `json:"error"`
 }
 
-func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
+func makeHTTPHandleFunc(f ApiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := f(w, r); err != nil {
 			WriteJSON(w, http.StatusBadRequest, ApiError{Error: err.Error()})
