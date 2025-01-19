@@ -7,22 +7,18 @@ import (
 	"net/http"
 
 	"github.com/ZulfiPy/RWAPIGo/internal/models/customer"
-	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
-	"github.com/ZulfiPy/RWAPIGo/internal/storage"
 	"github.com/gorilla/mux"
 )
 
 type APIServer struct {
 	listenAddr    string
 	customerStore *customer.CustomerStorage
-	vehicleStore  *storage.Storage[vehicle.Vehicles]
 }
 
-func NewAPIServer(listenAddr string, customerStore *customer.CustomerStorage, vehicleStore *storage.Storage[vehicle.Vehicles]) *APIServer {
+func NewAPIServer(listenAddr string, customerStore *customer.CustomerStorage) *APIServer {
 	return &APIServer{
 		listenAddr:    listenAddr,
 		customerStore: customerStore,
-		vehicleStore:  vehicleStore,
 	}
 }
 
@@ -32,8 +28,6 @@ type APIError struct {
 
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
-
-	// router.HandleFunc("/", makeHTTPHandleFunc(s.homeHandler))
 
 	// /customers
 	router.HandleFunc("/customers", makeHTTPHandleFunc(s.handleCustomer))
@@ -45,32 +39,32 @@ func (s *APIServer) Run() {
 
 func (s *APIServer) handleCustomer(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
-		return s.getCustomer(w, r)
+		return s.handleGetCustomer(w, r)
 	}
 	if r.Method == "POST" {
-		return s.addCustomer(w, r)
+		return s.handleAddCustomer(w, r)
 	}
 	if r.Method == "DELETE" {
-		return s.deleteCustomer(w, r)
+		return s.handleDeleteCustomer(w, r)
 	}
 	if r.Method == "PUT" {
-		return s.editCustomer(w, r)
+		return s.handleEditCustomer(w, r)
 	}
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
-func (s *APIServer) getCustomer(w http.ResponseWriter, _ *http.Request) error {
-	customers := customer.Customers{}
-	err := s.customerStore.Load(&customers)
+func (s *APIServer) handleGetCustomer(w http.ResponseWriter, _ *http.Request) error {
+	customers, err := s.customerStore.GetCustomer()
 
 	if err != nil {
-		return err
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
 	}
 
 	return WriteJSON(w, http.StatusOK, customers)
+
 }
 
-func (s *APIServer) addCustomer(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleAddCustomer(w http.ResponseWriter, r *http.Request) error {
 	var newCustomer customer.Customer
 	if err := json.NewDecoder(r.Body).Decode(&newCustomer); err != nil {
 		return err
@@ -87,7 +81,7 @@ type CustomResponse struct {
 	Response string `json:"response"`
 }
 
-func (s *APIServer) deleteCustomer(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleDeleteCustomer(w http.ResponseWriter, r *http.Request) error {
 	var personalID struct {
 		PersonalID int64 `json:"PersonalID"`
 	}
@@ -108,15 +102,7 @@ func (s *APIServer) deleteCustomer(w http.ResponseWriter, r *http.Request) error
 	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "customer deleted"})
 }
 
-func WriteJSON(w http.ResponseWriter, status int, value any) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	return json.NewEncoder(w).Encode(value)
-}
-
-
-func (s *APIServer) editCustomer(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleEditCustomer(w http.ResponseWriter, r *http.Request) error {
 	var editData struct {
 		FirstName   string `json:"FirstName"`
 		LastName    string `json:"LastName"`
@@ -140,6 +126,13 @@ type ApiFunc func(w http.ResponseWriter, r *http.Request) error
 
 type ApiError struct {
 	Error string `json:"error"`
+}
+
+func WriteJSON(w http.ResponseWriter, status int, value any) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	return json.NewEncoder(w).Encode(value)
 }
 
 func makeHTTPHandleFunc(f ApiFunc) http.HandlerFunc {
