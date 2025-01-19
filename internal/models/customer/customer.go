@@ -37,10 +37,6 @@ func NewCustomerStorage1(fileName string) *storage.Storage[Customers] {
 	return storage.NewStorage[Customers](fileName)
 }
 
-func (cs *CustomerStorage) Load(data *Customers) error {
-	return cs.store.Load(data)
-}
-
 func (cs *CustomerStorage) GetStorage() *storage.Storage[Customers] {
 	return cs.store
 }
@@ -131,7 +127,7 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 	}
 
 	customers := &Customers{}
-	cs.Load(customers)
+	cs.store.Load(customers)
 
 	newCustomer := Customer{
 		FirstName:      input.FirstName,
@@ -212,4 +208,14 @@ func (cs *CustomerStorage) EditCustomer(firstName, lastName, email, phoneNumber 
 	}
 
 	return nil
+}
+
+func (cs *CustomerStorage) GetCustomer() (Customers, error) {
+	customers := Customers{}
+
+	if err := cs.store.Load(&customers); err != nil {
+		return nil, err
+	}
+
+	return customers, nil
 }
