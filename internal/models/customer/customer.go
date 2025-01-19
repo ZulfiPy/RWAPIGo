@@ -108,30 +108,17 @@ func (cs *CustomerStorage) validateInput(input Customer) error {
 	return nil
 }
 
-func (cs *CustomerStorage) findCustomerByPersonalID(personalID int64) error {
-	customers := &Customers{}
-	cs.Load(customers)
+func (cs *CustomerStorage) findCustomerByPersonalID(personalID int64) int {
+	customers := Customers{}
+	cs.store.Load(&customers)
 
-	for _, customer := range *customers {
+	for idx, customer := range customers {
 		if customer.PersonalID == personalID {
-			return fmt.Errorf("customer with personalID %d already persists in the storage", personalID)
-		}
-	}
-	return nil
-}
-
-func (cs *CustomerStorage) FindCustomerByPersonalID(personalID int64) (*Customer, int) {
-	customers := &Customers{}
-	cs.store.Load(customers)
-	c := *customers
-
-	for idx, customer := range c {
-		if customer.PersonalID == personalID {
-			return &c[idx], idx
+			return idx
 		}
 	}
 
-	return nil, -1
+	return -1
 }
 
 func (cs *CustomerStorage) AddCustomer(input Customer) error {
@@ -139,8 +126,8 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 		return err
 	}
 
-	if err := cs.findCustomerByPersonalID(input.PersonalID); err != nil {
-		return err
+	if idx := cs.findCustomerByPersonalID(input.PersonalID); idx != -1 {
+		return fmt.Errorf("customer with personalID %d is found in the storage, duplicated customers not allowed", input.PersonalID)
 	}
 
 	customers := &Customers{}
@@ -166,26 +153,63 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 }
 
 func (cs *CustomerStorage) DeleteCustomer(personalID int64) error {
-	customers := &Customers{}
-	cs.store.Load(customers)
-	c := *customers
+	customers := Customers{}
+	cs.store.Load(&customers)
 
-	_, idx := cs.FindCustomerByPersonalID(personalID)
+	idx := cs.findCustomerByPersonalID(personalID)
 
 	if idx == -1 {
 		return fmt.Errorf("customer with personalID %d not found", personalID)
 	}
 
-	if err := validateIndex(idx, len(*customers)); err != nil {
+	if err := validateIndex(idx, len(customers)); err != nil {
 		return err
 	}
 
-	*customers = append(c[:idx], c[idx+1:]...)
+	customers = append(customers[:idx], customers[idx+1:]...)
 
-	if err := cs.store.Save(*customers); err != nil {
+	if err := cs.store.Save(customers); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (cs *CustomerStorage) EditCustomer(firstName, lastName, email, phoneNumber string, personalID int64) error {
+	idx := cs.findCustomerByPersonalID(personalID)
+
+	if idx == -1 {
+		return fmt.Errorf("customer with personalID %d not found in the storage", personalID)
+	}
+
+	customers := Customers{}
+	cs.store.Load(&customers)
+
+	customerToEdit := &customers[idx]
+
+	if len(firstName) != 0 {
+		customerToEdit.FirstName = firstName
+	}
+
+	if len(lastName) != 0 {
+		customerToEdit.LastName = lastName
+	}
+
+	if len(email) != 0 {
+		customerToEdit.Email = email
+	}
+
+	if len(phoneNumber) != 0 {
+		customerToEdit.PhoneNumber = phoneNumber
+	}
+
+	lastEdited := time.Now()
+
+	customerToEdit.LastEditedAt = &lastEdited
+
+	if err := cs.store.Save(customers); err != nil {
+		return err
+	}
 
 	return nil
 }
