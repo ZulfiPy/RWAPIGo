@@ -53,6 +53,9 @@ func (s *APIServer) handleCustomer(w http.ResponseWriter, r *http.Request) error
 	if r.Method == "DELETE" {
 		return s.deleteCustomer(w, r)
 	}
+	if r.Method == "PUT" {
+		return s.editCustomer(w, r)
+	}
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
@@ -110,6 +113,27 @@ func WriteJSON(w http.ResponseWriter, status int, value any) error {
 	w.WriteHeader(status)
 
 	return json.NewEncoder(w).Encode(value)
+}
+
+
+func (s *APIServer) editCustomer(w http.ResponseWriter, r *http.Request) error {
+	var editData struct {
+		FirstName   string `json:"FirstName"`
+		LastName    string `json:"LastName"`
+		Email       string `json:"Email"`
+		PhoneNumber string `json:"PhoneNumber"`
+		PersonalID  int64  `json:"PersonalID"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&editData); err != nil {
+		return err
+	}
+
+	if err := s.customerStore.EditCustomer(editData.LastName, editData.FirstName, editData.Email, editData.PhoneNumber, editData.PersonalID); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "customer successfully edited"})
 }
 
 type ApiFunc func(w http.ResponseWriter, r *http.Request) error
