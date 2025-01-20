@@ -24,21 +24,17 @@ type Customer struct {
 type Customers []Customer
 
 type CustomerStorage struct {
-	store *storage.Storage[Customers]
+	storage *storage.Storage[Customers]
 }
 
 func NewCustomerStorage(fileName string) *CustomerStorage {
 	return &CustomerStorage{
-		store: storage.NewStorage[Customers](fileName),
+		storage: storage.NewStorage[Customers](fileName),
 	}
 }
 
-func NewCustomerStorage1(fileName string) *storage.Storage[Customers] {
-	return storage.NewStorage[Customers](fileName)
-}
-
 func (cs *CustomerStorage) GetStorage() *storage.Storage[Customers] {
-	return cs.store
+	return cs.storage
 }
 
 func IntLength(number int64) int {
@@ -106,7 +102,7 @@ func (cs *CustomerStorage) validateInput(input Customer) error {
 
 func (cs *CustomerStorage) findCustomerByPersonalID(personalID int64) int {
 	customers := Customers{}
-	cs.store.Load(&customers)
+	cs.storage.Load(&customers)
 
 	for idx, customer := range customers {
 		if customer.PersonalID == personalID {
@@ -127,7 +123,7 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 	}
 
 	customers := &Customers{}
-	cs.store.Load(customers)
+	cs.storage.Load(customers)
 
 	newCustomer := Customer{
 		FirstName:      input.FirstName,
@@ -141,7 +137,7 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 
 	*customers = append(*customers, newCustomer)
 
-	if err := cs.store.Save(*customers); err != nil {
+	if err := cs.storage.Save(*customers); err != nil {
 		return err
 	}
 
@@ -150,7 +146,7 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 
 func (cs *CustomerStorage) DeleteCustomer(personalID int64) error {
 	customers := Customers{}
-	cs.store.Load(&customers)
+	cs.storage.Load(&customers)
 
 	idx := cs.findCustomerByPersonalID(personalID)
 
@@ -164,7 +160,7 @@ func (cs *CustomerStorage) DeleteCustomer(personalID int64) error {
 
 	customers = append(customers[:idx], customers[idx+1:]...)
 
-	if err := cs.store.Save(customers); err != nil {
+	if err := cs.storage.Save(customers); err != nil {
 		return err
 	}
 
@@ -179,7 +175,7 @@ func (cs *CustomerStorage) EditCustomer(firstName, lastName, email, phoneNumber 
 	}
 
 	customers := Customers{}
-	cs.store.Load(&customers)
+	cs.storage.Load(&customers)
 
 	customerToEdit := &customers[idx]
 
@@ -203,7 +199,7 @@ func (cs *CustomerStorage) EditCustomer(firstName, lastName, email, phoneNumber 
 
 	customerToEdit.LastEditedAt = &lastEdited
 
-	if err := cs.store.Save(customers); err != nil {
+	if err := cs.storage.Save(customers); err != nil {
 		return err
 	}
 
@@ -213,7 +209,7 @@ func (cs *CustomerStorage) EditCustomer(firstName, lastName, email, phoneNumber 
 func (cs *CustomerStorage) GetCustomer() (Customers, error) {
 	customers := Customers{}
 
-	if err := cs.store.Load(&customers); err != nil {
+	if err := cs.storage.Load(&customers); err != nil {
 		return nil, err
 	}
 
