@@ -30,3 +30,13 @@ func NewVehicleStorage(fileName string) *VehicleStorage {
 func (vs *VehicleStorage) GetStorage() *storage.Storage[Vehicles] {
 	return vs.storage
 }
+
+func (vs *VehicleStorage) GetVehicle() (Vehicles, error) {
+	vehicles := Vehicles{}
+
+	if err := vs.storage.Load(&vehicles); err != nil {
+		return nil, err
+	}
+
+	return vehicles, nil
+}
