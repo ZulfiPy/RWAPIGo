@@ -34,6 +34,7 @@ func (s *APIServer) Run() {
 
 	// /customers
 	router.HandleFunc("/customers", makeHTTPHandleFunc(s.handleCustomer))
+	router.HandleFunc("/vehicles", makeHTTPHandleFunc(s.handleVehicle))
 
 	log.Println("JSON API server is running on port", s.listenAddr)
 
@@ -56,6 +57,13 @@ func (s *APIServer) handleCustomer(w http.ResponseWriter, r *http.Request) error
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
+func (s *APIServer) handleVehicle(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return s.handleGetVehicle(w, r)
+	}
+	return fmt.Errorf("method not allowed %s", r.Method)
+}
+
 func (s *APIServer) handleGetCustomer(w http.ResponseWriter, _ *http.Request) error {
 	customers, err := s.customerStorage.GetCustomer()
 
@@ -65,6 +73,16 @@ func (s *APIServer) handleGetCustomer(w http.ResponseWriter, _ *http.Request) er
 
 	return WriteJSON(w, http.StatusOK, customers)
 
+}
+
+func (s *APIServer) handleGetVehicle(w http.ResponseWriter, _ *http.Request) error {
+	vehicles, err := s.vehicleStorage.GetVehicle()
+
+	if err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusAccepted, vehicles)
 }
 
 func (s *APIServer) handleAddCustomer(w http.ResponseWriter, r *http.Request) error {
