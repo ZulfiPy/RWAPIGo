@@ -7,18 +7,21 @@ import (
 	"net/http"
 
 	"github.com/ZulfiPy/RWAPIGo/internal/models/customer"
+	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
 	"github.com/gorilla/mux"
 )
 
 type APIServer struct {
 	listenAddr    string
-	customerStore *customer.CustomerStorage
+	customerStorage *customer.CustomerStorage
+	vehicleStorage  *vehicle.VehicleStorage
 }
 
-func NewAPIServer(listenAddr string, customerStore *customer.CustomerStorage) *APIServer {
+func NewAPIServer(listenAddr string, customerStorage *customer.CustomerStorage, vehicleStorage *vehicle.VehicleStorage) *APIServer {
 	return &APIServer{
 		listenAddr:    listenAddr,
-		customerStore: customerStore,
+		customerStorage: customerStorage,
+		vehicleStorage:  vehicleStorage,
 	}
 }
 
@@ -54,7 +57,7 @@ func (s *APIServer) handleCustomer(w http.ResponseWriter, r *http.Request) error
 }
 
 func (s *APIServer) handleGetCustomer(w http.ResponseWriter, _ *http.Request) error {
-	customers, err := s.customerStore.GetCustomer()
+	customers, err := s.customerStorage.GetCustomer()
 
 	if err != nil {
 		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
@@ -70,7 +73,7 @@ func (s *APIServer) handleAddCustomer(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	if err := s.customerStore.AddCustomer(newCustomer); err != nil {
+	if err := s.customerStorage.AddCustomer(newCustomer); err != nil {
 		return err
 	}
 
@@ -95,7 +98,7 @@ func (s *APIServer) handleDeleteCustomer(w http.ResponseWriter, r *http.Request)
 		return WriteJSON(w, http.StatusBadRequest, ApiError{Error: "personalID must be exactly 11 digits"})
 	}
 
-	if err := s.customerStore.DeleteCustomer(personalID.PersonalID); err != nil {
+	if err := s.customerStorage.DeleteCustomer(personalID.PersonalID); err != nil {
 		return err
 	}
 
@@ -115,7 +118,7 @@ func (s *APIServer) handleEditCustomer(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	if err := s.customerStore.EditCustomer(editData.LastName, editData.FirstName, editData.Email, editData.PhoneNumber, editData.PersonalID); err != nil {
+	if err := s.customerStorage.EditCustomer(editData.LastName, editData.FirstName, editData.Email, editData.PhoneNumber, editData.PersonalID); err != nil {
 		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
 	}
 
