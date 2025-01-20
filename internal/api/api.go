@@ -12,14 +12,14 @@ import (
 )
 
 type APIServer struct {
-	listenAddr    string
+	listenAddr      string
 	customerStorage *customer.CustomerStorage
 	vehicleStorage  *vehicle.VehicleStorage
 }
 
 func NewAPIServer(listenAddr string, customerStorage *customer.CustomerStorage, vehicleStorage *vehicle.VehicleStorage) *APIServer {
 	return &APIServer{
-		listenAddr:    listenAddr,
+		listenAddr:      listenAddr,
 		customerStorage: customerStorage,
 		vehicleStorage:  vehicleStorage,
 	}
