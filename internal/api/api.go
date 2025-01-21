@@ -61,6 +61,9 @@ func (s *APIServer) handleVehicle(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "GET" {
 		return s.handleGetVehicle(w, r)
 	}
+	if r.Method == "POST" {
+		return s.handleAddVehicle(w, r)
+	}
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
@@ -96,6 +99,20 @@ func (s *APIServer) handleAddCustomer(w http.ResponseWriter, r *http.Request) er
 	}
 
 	return WriteJSON(w, http.StatusOK, newCustomer)
+}
+
+func (s *APIServer) handleAddVehicle(w http.ResponseWriter, r *http.Request) error {
+	var newVehicle vehicle.Vehicle
+	if err := json.NewDecoder(r.Body).Decode(&newVehicle); err != nil {
+		return err
+	}
+
+	vehicle, err := s.vehicleStorage.AddVehicle(newVehicle)
+	if err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	return WriteJSON(w, http.StatusOK, vehicle)
 }
 
 type CustomResponse struct {
