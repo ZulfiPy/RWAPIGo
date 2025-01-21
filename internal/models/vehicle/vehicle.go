@@ -134,3 +134,23 @@ func (vs *VehicleStorage) AddVehicle(input Vehicle) (Vehicle, error) {
 
 	return input, nil
 }
+
+func (vs *VehicleStorage) DeleteVehicle(plateNumber string) error {
+	vehicles := Vehicles{}
+
+	if err := vs.storage.Load(&vehicles); err != nil {
+		return err
+	}
+
+	if _, ok := vehicles[plateNumber]; !ok {
+		return fmt.Errorf("vehicle with plate number %v not found in the storage", plateNumber)
+	}
+
+	delete(vehicles, plateNumber)
+
+	if err := vs.storage.Save(vehicles); err != nil {
+		return err
+	}
+
+	return nil
+}
