@@ -64,6 +64,9 @@ func (s *APIServer) handleVehicle(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "POST" {
 		return s.handleAddVehicle(w, r)
 	}
+	if r.Method == "DELETE" {
+		return s.handleDeleteVehicle(w, r)
+	}
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
@@ -138,6 +141,22 @@ func (s *APIServer) handleDeleteCustomer(w http.ResponseWriter, r *http.Request)
 	}
 
 	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "customer deleted"})
+}
+
+func (s *APIServer) handleDeleteVehicle(w http.ResponseWriter, r *http.Request) error {
+	var plateNumber struct {
+		PlateNumber string `json:"PlateNumber"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&plateNumber); err != nil {
+		return err
+	}
+
+	if err := s.vehicleStorage.DeleteVehicle(plateNumber.PlateNumber); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "vehicle deleted"})
 }
 
 func (s *APIServer) handleEditCustomer(w http.ResponseWriter, r *http.Request) error {
