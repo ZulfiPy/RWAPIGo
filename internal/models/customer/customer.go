@@ -206,7 +206,7 @@ func (cs *CustomerStorage) EditCustomer(firstName, lastName, email, phoneNumber 
 	return nil
 }
 
-func (cs *CustomerStorage) GetCustomer() (Customers, error) {
+func (cs *CustomerStorage) GetCustomers() (Customers, error) {
 	customers := Customers{}
 
 	if err := cs.storage.Load(&customers); err != nil {
