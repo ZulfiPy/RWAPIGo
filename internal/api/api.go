@@ -67,6 +67,9 @@ func (s *APIServer) handleVehicle(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "DELETE" {
 		return s.handleDeleteVehicle(w, r)
 	}
+	if r.Method == "PUT" {
+		return s.handleEditVehicle(w, r)
+	}
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
@@ -177,6 +180,20 @@ func (s *APIServer) handleEditCustomer(w http.ResponseWriter, r *http.Request) e
 	}
 
 	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "customer successfully edited"})
+}
+
+func (s *APIServer) handleEditVehicle(w http.ResponseWriter, r *http.Request) error {
+	var editVehicle vehicle.Vehicle
+	if err := json.NewDecoder(r.Body).Decode(&editVehicle); err != nil {
+		return err
+	}
+	vehicle, err := s.vehicleStorage.EditVehicle(editVehicle)
+
+	if err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	return WriteJSON(w, http.StatusOK, vehicle)
 }
 
 type ApiFunc func(w http.ResponseWriter, r *http.Request) error
