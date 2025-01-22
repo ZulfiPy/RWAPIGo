@@ -99,7 +99,7 @@ func (vs *VehicleStorage) validateVehicle(input Vehicle) error {
 	return nil
 }
 
-func (vs *VehicleStorage) GetVehicle() (Vehicles, error) {
+func (vs *VehicleStorage) GetVehicles() (Vehicles, error) {
 	vehicles := Vehicles{}
 
 	if err := vs.storage.Load(&vehicles); err != nil {
