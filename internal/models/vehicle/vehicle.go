@@ -3,6 +3,7 @@ package vehicle
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"time"
 
@@ -153,4 +154,46 @@ func (vs *VehicleStorage) DeleteVehicle(plateNumber string) error {
 	}
 
 	return nil
+}
+
+func printFields(vehicle Vehicle) error {
+	v := reflect.ValueOf(vehicle)
+	typeOfVehicle := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		if v.Field(i).Interface() == "" {
+			return fmt.Errorf("%s cannot be empty", typeOfVehicle.Field(i).Name)
+		}
+	}
+	return nil
+}
+
+func (vs *VehicleStorage) EditVehicle(input Vehicle) (Vehicle, error) {
+	vehicles := Vehicles{}
+
+	if err := vs.storage.Load(&vehicles); err != nil {
+		return input, err
+	}
+
+	_, ok := vehicles[input.PlateNumber]
+
+	if !ok {
+		return input, fmt.Errorf("vehicle with plate number %v not found in the storage", input.PlateNumber)
+	}
+
+	if err := printFields(input); err != nil {
+		return input, err
+	}
+
+	if vehicles[input.PlateNumber] == input {
+		return Vehicle{}, errors.New("new data not detected")
+	}
+
+	vehicles[input.PlateNumber] = input
+
+	if err := vs.storage.Save(vehicles); err != nil {
+		return Vehicle{}, err
+	}
+
+	return input, nil
 }
