@@ -218,6 +218,10 @@ func (s *APIServer) handleAddVehicleToCustomer(w http.ResponseWriter, r *http.Re
 		return err
 	}
 
+	if err := s.vehicleStorage.GetVehicle(vehicle.PlateNumber); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
 	customer, err := s.customerStorage.AddVehicle(vehicle, personalID)
 	if err != nil {
 		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
