@@ -99,6 +99,18 @@ func (vs *VehicleStorage) validateVehicle(input Vehicle) error {
 	return nil
 }
 
+func (vs *VehicleStorage) GetVehicle(plateNumber string) error {
+	vehicles := Vehicles{}
+	if err := vs.storage.Load(&vehicles); err != nil {
+		return err
+	}
+
+	if _, ok := vehicles[plateNumber]; !ok {
+		return fmt.Errorf("vehicle with plateNumber %v not found", plateNumber)
+	}
+	return nil
+}
+
 func (vs *VehicleStorage) GetVehicles() (Vehicles, error) {
 	vehicles := Vehicles{}
 
