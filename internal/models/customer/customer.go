@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/ZulfiPy/RWAPIGo/internal/storage"
+	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
 )
 
 type Customer struct {
@@ -16,7 +17,7 @@ type Customer struct {
 	PersonalID     int64
 	PhoneNumber    string
 	Email          string
-	RentedVehicles []string
+	RentedVehicles []vehicle.Vehicle
 	CreatedAt      time.Time
 	LastEditedAt   *time.Time
 }
@@ -131,7 +132,7 @@ func (cs *CustomerStorage) AddCustomer(input Customer) error {
 		PersonalID:     input.PersonalID,
 		PhoneNumber:    input.PhoneNumber,
 		Email:          input.Email,
-		RentedVehicles: []string{},
+		RentedVehicles: []vehicle.Vehicle{},
 		CreatedAt:      time.Now(),
 	}
 
@@ -214,4 +215,25 @@ func (cs *CustomerStorage) GetCustomers() (Customers, error) {
 	}
 
 	return customers, nil
+}
+
+func (cs *CustomerStorage) AddVehicle(vehicle vehicle.Vehicle, personalID int64) (Customer, error) {
+	fmt.Println("AddVehicle is running...")
+	customers := Customers{}
+	if err := cs.storage.Load(&customers); err != nil {
+		return Customer{}, err
+	}
+
+	idx := cs.findCustomerByPersonalID(personalID)
+	if idx == -1 {
+		return Customer{}, fmt.Errorf("customer with personalID %d not found", personalID)
+	}
+
+
+	customers[idx].RentedVehicles = append(customers[idx].RentedVehicles, vehicle)
+
+	if err := cs.storage.Save(customers); err != nil {
+		return Customer{}, err
+	}
+	return customers[idx], nil
 }
