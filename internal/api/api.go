@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/ZulfiPy/RWAPIGo/internal/models/customer"
 	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
@@ -34,6 +35,7 @@ func (s *APIServer) Run() {
 
 	// /customers
 	router.HandleFunc("/customers", makeHTTPHandleFunc(s.handleCustomer))
+	router.HandleFunc("/customers/{personalID}/vehicles", makeHTTPHandleFunc(s.handleCustomerVehicle))
 	router.HandleFunc("/vehicles", makeHTTPHandleFunc(s.handleVehicle))
 
 	log.Println("JSON API server is running on port", s.listenAddr)
@@ -73,8 +75,15 @@ func (s *APIServer) handleVehicle(w http.ResponseWriter, r *http.Request) error 
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
+func (s *APIServer) handleCustomerVehicle(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "POST" {
+		return s.handleAddVehicleToCustomer(w, r)
+	}
+	return fmt.Errorf("method now allowed %s", r.Method)
+}
+
 func (s *APIServer) handleGetCustomer(w http.ResponseWriter, _ *http.Request) error {
-	customers, err := s.customerStorage.GetCustomer()
+	customers, err := s.customerStorage.GetCustomers()
 
 	if err != nil {
 		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
@@ -85,7 +94,7 @@ func (s *APIServer) handleGetCustomer(w http.ResponseWriter, _ *http.Request) er
 }
 
 func (s *APIServer) handleGetVehicle(w http.ResponseWriter, _ *http.Request) error {
-	vehicles, err := s.vehicleStorage.GetVehicle()
+	vehicles, err := s.vehicleStorage.GetVehicles()
 
 	if err != nil {
 		return err
@@ -194,6 +203,27 @@ func (s *APIServer) handleEditVehicle(w http.ResponseWriter, r *http.Request) er
 	}
 
 	return WriteJSON(w, http.StatusOK, vehicle)
+}
+
+func (s *APIServer) handleAddVehicleToCustomer(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+
+	personalID, personalIDErr := strconv.ParseInt(vars["personalID"], 10, 64)
+	if personalIDErr != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: personalIDErr.Error()})
+	}
+
+	var vehicle vehicle.Vehicle
+	if err := json.NewDecoder(r.Body).Decode(&vehicle); err != nil {
+		return err
+	}
+
+	customer, err := s.customerStorage.AddVehicle(vehicle, personalID)
+	if err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	return WriteJSON(w, http.StatusOK, customer)
 }
 
 type ApiFunc func(w http.ResponseWriter, r *http.Request) error
