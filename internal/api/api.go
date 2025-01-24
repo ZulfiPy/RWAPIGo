@@ -9,6 +9,7 @@ import (
 
 	"github.com/ZulfiPy/RWAPIGo/internal/models/customer"
 	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
+	"github.com/ZulfiPy/RWAPIGo/internal/models/employee"
 	"github.com/gorilla/mux"
 )
 
@@ -16,13 +17,15 @@ type APIServer struct {
 	listenAddr      string
 	customerStorage *customer.CustomerStorage
 	vehicleStorage  *vehicle.VehicleStorage
+	employeeStorage *employee.EmployeeStorage
 }
 
-func NewAPIServer(listenAddr string, customerStorage *customer.CustomerStorage, vehicleStorage *vehicle.VehicleStorage) *APIServer {
+func NewAPIServer(listenAddr string, customerStorage *customer.CustomerStorage, vehicleStorage *vehicle.VehicleStorage, employeeStorage *employee.EmployeeStorage) *APIServer {
 	return &APIServer{
 		listenAddr:      listenAddr,
 		customerStorage: customerStorage,
 		vehicleStorage:  vehicleStorage,
+		employeeStorage: employeeStorage,
 	}
 }
 
