@@ -36,6 +36,7 @@ func (s *APIServer) Run() {
 	// /customers
 	router.HandleFunc("/customers", makeHTTPHandleFunc(s.handleCustomer))
 	router.HandleFunc("/customers/{personalID}/vehicles", makeHTTPHandleFunc(s.handleCustomerVehicle))
+	router.HandleFunc("/customers/{personalID}/{plateNumber}/delete-vehicle", makeHTTPHandleFunc(s.handleDeleteVehicleFromCustomer))
 	router.HandleFunc("/vehicles", makeHTTPHandleFunc(s.handleVehicle))
 
 	log.Println("JSON API server is running on port", s.listenAddr)
@@ -169,6 +170,29 @@ func (s *APIServer) handleDeleteVehicle(w http.ResponseWriter, r *http.Request) 
 	}
 
 	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "vehicle deleted"})
+}
+
+func (s *APIServer) handleDeleteVehicleFromCustomer(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+	personalID, err := strconv.ParseInt(vars["personalID"], 10, 64)
+	if err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	plateNumber := vars["plateNumber"]
+	if err := s.vehicleStorage.GetVehicle(plateNumber); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	if err := s.customerStorage.DeleteVehicle(plateNumber, personalID); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	if err := s.vehicleStorage.DeleteVehicle(plateNumber); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "vehicle deleted from customer"})
 }
 
 func (s *APIServer) handleEditCustomer(w http.ResponseWriter, r *http.Request) error {
