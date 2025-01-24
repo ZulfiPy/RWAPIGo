@@ -252,6 +252,7 @@ func (cs *CustomerStorage) DeleteVehicle(plateNumber string, personalID int64) e
 			customers[customerIdx].RentedVehicles = append(customers[customerIdx].RentedVehicles[:idx], customers[customerIdx].RentedVehicles[idx+1:]...)
 			break
 		}
+		return fmt.Errorf("vehicle with plateNumber %v not found in customers rented vehicles", plateNumber)
 	}
 
 	if err := cs.storage.Save(customers); err != nil {
