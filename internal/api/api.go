@@ -188,10 +188,6 @@ func (s *APIServer) handleDeleteVehicleFromCustomer(w http.ResponseWriter, r *ht
 		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
 	}
 
-	if err := s.vehicleStorage.DeleteVehicle(plateNumber); err != nil {
-		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
-	}
-
 	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "vehicle deleted from customer"})
 }
 
