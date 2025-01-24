@@ -7,8 +7,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/ZulfiPy/RWAPIGo/internal/storage"
 	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
+	"github.com/ZulfiPy/RWAPIGo/internal/storage"
 )
 
 type Customer struct {
@@ -218,7 +218,6 @@ func (cs *CustomerStorage) GetCustomers() (Customers, error) {
 }
 
 func (cs *CustomerStorage) AddVehicle(vehicle vehicle.Vehicle, personalID int64) (Customer, error) {
-	fmt.Println("AddVehicle is running...")
 	customers := Customers{}
 	if err := cs.storage.Load(&customers); err != nil {
 		return Customer{}, err
@@ -229,11 +228,35 @@ func (cs *CustomerStorage) AddVehicle(vehicle vehicle.Vehicle, personalID int64)
 		return Customer{}, fmt.Errorf("customer with personalID %d not found", personalID)
 	}
 
-
 	customers[idx].RentedVehicles = append(customers[idx].RentedVehicles, vehicle)
 
 	if err := cs.storage.Save(customers); err != nil {
 		return Customer{}, err
 	}
 	return customers[idx], nil
+}
+
+func (cs *CustomerStorage) DeleteVehicle(plateNumber string, personalID int64) error {
+	customers := Customers{}
+	if err := cs.storage.Load(&customers); err != nil {
+		return err
+	}
+
+	customerIdx := cs.findCustomerByPersonalID(personalID)
+	if customerIdx == -1 {
+		return fmt.Errorf("customer with personalID %d not found", personalID)
+	}
+
+	for idx, vehicle := range customers[customerIdx].RentedVehicles {
+		if vehicle.PlateNumber == plateNumber {
+			customers[customerIdx].RentedVehicles = append(customers[customerIdx].RentedVehicles[:idx], customers[customerIdx].RentedVehicles[idx+1:]...)
+			break
+		}
+	}
+
+	if err := cs.storage.Save(customers); err != nil {
+		return err
+	}
+
+	return nil
 }
