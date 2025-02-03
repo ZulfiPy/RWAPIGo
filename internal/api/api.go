@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/ZulfiPy/RWAPIGo/internal/models/customer"
-	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
 	"github.com/ZulfiPy/RWAPIGo/internal/models/employee"
+	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
 	"github.com/gorilla/mux"
 )
 
@@ -40,7 +40,10 @@ func (s *APIServer) Run() {
 	router.HandleFunc("/customers", makeHTTPHandleFunc(s.handleCustomer))
 	router.HandleFunc("/customers/{personalID}/vehicles", makeHTTPHandleFunc(s.handleCustomerVehicle))
 	router.HandleFunc("/customers/{personalID}/{plateNumber}/delete-vehicle", makeHTTPHandleFunc(s.handleDeleteVehicleFromCustomer))
+
 	router.HandleFunc("/vehicles", makeHTTPHandleFunc(s.handleVehicle))
+
+	router.HandleFunc("/employees", makeHTTPHandleFunc(s.handleEmployee))
 
 	log.Println("JSON API server is running on port", s.listenAddr)
 
@@ -76,14 +79,21 @@ func (s *APIServer) handleVehicle(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "PUT" {
 		return s.handleEditVehicle(w, r)
 	}
-	return fmt.Errorf("method not allowed %s", r.Method)
+	return fmt.Errorf("method %s not allowed", r.Method)
+}
+
+func (s *APIServer) handleEmployee(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return s.handleGetEmployee(w, r)
+	}
+	return fmt.Errorf("method %s not allowed", r.Method)
 }
 
 func (s *APIServer) handleCustomerVehicle(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "POST" {
 		return s.handleAddVehicleToCustomer(w, r)
 	}
-	return fmt.Errorf("method now allowed %s", r.Method)
+	return fmt.Errorf("method %s not allowed", r.Method)
 }
 
 func (s *APIServer) handleGetCustomer(w http.ResponseWriter, _ *http.Request) error {
@@ -105,6 +115,16 @@ func (s *APIServer) handleGetVehicle(w http.ResponseWriter, _ *http.Request) err
 	}
 
 	return WriteJSON(w, http.StatusAccepted, vehicles)
+}
+
+func (s *APIServer) handleGetEmployee(w http.ResponseWriter, r *http.Request) error {
+	employees, err := s.employeeStorage.GetEmployees()
+
+	if err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	return WriteJSON(w, http.StatusOK, employees)
 }
 
 func (s *APIServer) handleAddCustomer(w http.ResponseWriter, r *http.Request) error {
