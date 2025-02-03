@@ -31,3 +31,13 @@ func NewEmployeeStorage(fileName string) *EmployeeStorage {
 func (es *EmployeeStorage) GetStorage() *storage.Storage[Employees] {
 	return es.storage
 }
+
+func (es *EmployeeStorage) GetEmployees() (Employees, error) {
+	employees := Employees{}
+
+	if err := es.storage.Load(&employees); err != nil {
+		return Employees{}, err
+	}
+
+	return employees, nil
+}
