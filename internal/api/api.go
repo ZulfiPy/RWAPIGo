@@ -10,6 +10,8 @@ import (
 	"github.com/ZulfiPy/RWAPIGo/internal/models/customer"
 	"github.com/ZulfiPy/RWAPIGo/internal/models/employee"
 	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
+	"github.com/ZulfiPy/RWAPIGo/internal/utils"
+
 	"github.com/gorilla/mux"
 )
 
@@ -86,6 +88,9 @@ func (s *APIServer) handleEmployee(w http.ResponseWriter, r *http.Request) error
 	if r.Method == "GET" {
 		return s.handleGetEmployee(w, r)
 	}
+	if r.Method == "POST" {
+		return s.handleAddEmployee(w, r)
+	}
 	return fmt.Errorf("method %s not allowed", r.Method)
 }
 
@@ -154,6 +159,22 @@ func (s *APIServer) handleAddVehicle(w http.ResponseWriter, r *http.Request) err
 	return WriteJSON(w, http.StatusOK, vehicle)
 }
 
+func (s *APIServer) handleAddEmployee(w http.ResponseWriter, r *http.Request) error {
+	var newEmployee employee.Employee
+
+	if err := json.NewDecoder(r.Body).Decode(&newEmployee); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+	
+	employee, err := s.employeeStorage.AddEmployee(newEmployee)
+
+	if err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	return WriteJSON(w, http.StatusOK, employee)
+}
+
 type CustomResponse struct {
 	Response string `json:"response"`
 }
@@ -166,7 +187,7 @@ func (s *APIServer) handleDeleteCustomer(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	personalIDLength := customer.IntLength(personalID.PersonalID)
+	personalIDLength := utils.IntLength(personalID.PersonalID)
 
 	if personalIDLength != 11 {
 		return WriteJSON(w, http.StatusBadRequest, ApiError{Error: "personalID must be exactly 11 digits"})
