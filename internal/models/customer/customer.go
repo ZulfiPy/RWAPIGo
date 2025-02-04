@@ -9,6 +9,7 @@ import (
 
 	"github.com/ZulfiPy/RWAPIGo/internal/models/vehicle"
 	"github.com/ZulfiPy/RWAPIGo/internal/storage"
+	"github.com/ZulfiPy/RWAPIGo/internal/utils"
 )
 
 type Customer struct {
@@ -36,21 +37,6 @@ func NewCustomerStorage(fileName string) *CustomerStorage {
 
 func (cs *CustomerStorage) GetStorage() *storage.Storage[Customers] {
 	return cs.storage
-}
-
-func IntLength(number int64) int {
-	if number == 0 {
-		return 1
-	}
-
-	length := 0
-
-	for number != 0 {
-		number /= 10
-		length++
-	}
-
-	return length
 }
 
 func validateIndex(idx, customersLength int) error {
@@ -92,7 +78,7 @@ func (cs *CustomerStorage) validateInput(input Customer) error {
 		return fmt.Errorf("invalid %v", err)
 	}
 
-	personalIDLen := IntLength(input.PersonalID)
+	personalIDLen := utils.IntLength(input.PersonalID)
 
 	if personalIDLen != 11 {
 		return errors.New("invalid input: personal id of the customer must be exactly 11 digits")
