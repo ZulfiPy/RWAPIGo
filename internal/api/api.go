@@ -91,6 +91,9 @@ func (s *APIServer) handleEmployee(w http.ResponseWriter, r *http.Request) error
 	if r.Method == "POST" {
 		return s.handleAddEmployee(w, r)
 	}
+	if r.Method == "DELETE" {
+		return s.handleDeleteEmployee(w, r)
+	}
 	return fmt.Errorf("method %s not allowed", r.Method)
 }
 
@@ -122,7 +125,7 @@ func (s *APIServer) handleGetVehicle(w http.ResponseWriter, _ *http.Request) err
 	return WriteJSON(w, http.StatusAccepted, vehicles)
 }
 
-func (s *APIServer) handleGetEmployee(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetEmployee(w http.ResponseWriter, _ *http.Request) error {
 	employees, err := s.employeeStorage.GetEmployees()
 
 	if err != nil {
@@ -233,6 +236,20 @@ func (s *APIServer) handleDeleteVehicleFromCustomer(w http.ResponseWriter, r *ht
 	}
 
 	return WriteJSON(w, http.StatusOK, CustomResponse{Response: "vehicle deleted from customer"})
+}
+
+func (s *APIServer) handleDeleteEmployee(w http.ResponseWriter, r *http.Request) error {
+	var personalID struct {
+		PersonalID int64 `json:"PersonalID"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&personalID); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+
+	if err := s.employeeStorage.DeleteEmployee(personalID.PersonalID); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+	}
+	return nil
 }
 
 func (s *APIServer) handleEditCustomer(w http.ResponseWriter, r *http.Request) error {
