@@ -60,7 +60,7 @@ func (es *EmployeeStorage) validateInput(input Employee) error {
 	return nil
 }
 
-func (es *EmployeeStorage) duplicatedEmployee(employees Employees, personalID int64) bool {
+func (es *EmployeeStorage) employeePersists(employees Employees, personalID int64) bool {
 	for _, employee := range employees {
 		if employee.PersonalID == personalID {
 			return true
@@ -100,7 +100,7 @@ func (es *EmployeeStorage) AddEmployee(input Employee) (Employee, error) {
 		return Employee{}, err
 	}
 
-	if es.duplicatedEmployee(employees, input.PersonalID) {
+	if es.employeePersists(employees, input.PersonalID) {
 		return Employee{}, fmt.Errorf("employee with personal ID %d already exists", input.PersonalID)
 	}
 
@@ -110,4 +110,28 @@ func (es *EmployeeStorage) AddEmployee(input Employee) (Employee, error) {
 	}
 
 	return input, nil
+}
+
+func (es *EmployeeStorage) DeleteEmployee(personalID int64) error {
+	employees := Employees{}
+	if err := es.storage.Load(&employees); err != nil {
+		return err
+	}
+
+	if !es.employeePersists(employees, personalID) {
+		return fmt.Errorf("employee with personal ID %d not found", personalID)
+	}
+
+	for idx, employee := range employees {
+		if employee.PersonalID == personalID {
+			employees = append(employees[:idx], employees[idx+1:]...)
+			break
+		}
+	}
+
+	if err := es.storage.Save(employees); err != nil {
+		return err
+	}
+
+	return nil
 }
