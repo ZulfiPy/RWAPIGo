@@ -153,3 +153,32 @@ func (es *EmployeeStorage) DeleteEmployee(personalID int64) error {
 
 	return nil
 }
+
+func (es *EmployeeStorage) EditEmployeeContacts(email, phoneNumber, address string, personalID int64) (Employee, error) {
+	employees := Employees{}
+
+	if err := es.storage.Load(&employees); err != nil {
+		return Employee{}, err
+	}
+
+	idx, err := es.employeePersists(employees, personalID)
+	if err != nil {
+		return Employee{}, err
+	}
+
+	if err := es.validateEditData(email, phoneNumber, address); err != nil {
+		return Employee{}, err
+	}
+
+	employee := employees[idx]
+	employee.Email = email
+	employee.PhoneNumber = phoneNumber
+	employee.Address = address
+	employees[idx] = employee
+
+	if err := es.storage.Save(employees); err != nil {
+		return Employee{}, err
+	}
+
+	return employee, nil
+}
