@@ -53,21 +53,39 @@ func (es *EmployeeStorage) validateInput(input Employee) error {
 		return errors.New("invalid input: phone number cannot be empty or shorter than 7 numbers")
 	}
 
-	if input.Address == "" || len(input.Address) < 5 {
-		return errors.New("invalid input: living address cannot be empty or shorter than 5 symbols")
+	if input.Address == "" || len(input.Address) < 7 {
+		return errors.New("invalid input: living address cannot be empty or shorter than 7 symbols")
 	}
 
 	return nil
 }
 
-func (es *EmployeeStorage) employeePersists(employees Employees, personalID int64) bool {
-	for _, employee := range employees {
+func (es *EmployeeStorage) validateEditData(email, phoneNumber, address string) error {
+	emailErr := utils.IsValidEmail(email)
+
+	if emailErr != nil {
+		return emailErr
+	}
+
+	if phoneNumber == "" || len(phoneNumber) < 7 {
+		return errors.New("invalid input: phone number cannot be empty or shorter than 7 numnbers")
+	}
+
+	if address == "" || len(address) < 7 {
+		return errors.New("invalid input: living address cannot be empty or shorter than 7 symbols")
+	}
+
+	return nil
+}
+
+func (es *EmployeeStorage) employeePersists(employees Employees, personalID int64) (int, error) {
+	for idx, employee := range employees {
 		if employee.PersonalID == personalID {
-			return true
+			return idx, nil
 		}
 	}
 
-	return false
+	return -1, fmt.Errorf("employee with personalID %d not found", personalID)
 }
 
 func NewEmployeeStorage(fileName string) *EmployeeStorage {
@@ -100,7 +118,7 @@ func (es *EmployeeStorage) AddEmployee(input Employee) (Employee, error) {
 		return Employee{}, err
 	}
 
-	if es.employeePersists(employees, input.PersonalID) {
+	if _, err := es.employeePersists(employees, input.PersonalID); err != nil {
 		return Employee{}, fmt.Errorf("employee with personal ID %d already exists", input.PersonalID)
 	}
 
@@ -118,8 +136,8 @@ func (es *EmployeeStorage) DeleteEmployee(personalID int64) error {
 		return err
 	}
 
-	if !es.employeePersists(employees, personalID) {
-		return fmt.Errorf("employee with personal ID %d not found", personalID)
+	if _, err := es.employeePersists(employees, personalID); err != nil {
+		return err
 	}
 
 	for idx, employee := range employees {
